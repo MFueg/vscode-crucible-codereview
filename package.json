@@ -1,19 +1,19 @@
 {
-	"name": "my-extension",
-	"displayName": "My Extension",
-	"description": "Dolore sint occaecat occaecat sunt veniam.",
+	"name": "vscode-crucible-codereview",
+	"displayName": "Crucible Code Review",
+	"description": "Atlassian Crucible integration for Visual Studio Code",
 	"icon": "img/logo.png",
 	"author": "Matthias Füg <matthias.fueg@dampsoft.de>",
-	"publisher": "publisher-name",
+	"publisher": "mfueg",
 	"version": "0.0.0",
 	"license": "MIT",
-	"homepage": "https://github.com/publisher-name/my-extension",
+	"homepage": "https://github.com/mfueg/vscode-crucible-codereview",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/publisher-name/my-extension.git"
+		"url": "https://github.com/mfueg/vscode-crucible-codereview.git"
 	},
 	"bugs": {
-		"url": "https://github.com/publisher-name/my-extension/issues",
+		"url": "https://github.com/mfueg/vscode-crucible-codereview/issues",
 		"email": "matthias.fueg@dampsoft.de"
 	},
 	"categories": [ "Other" ],
@@ -28,7 +28,7 @@
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "My Extension configuration",
+			"title": "Crucible Codereview configuration",
 			"properties": {}
 		},
 		"commands": [],

@@ -1,19 +1,14 @@
-# Base Extension for Visual Studio Code
+#Crucible Code Review for Visual Studio Code
 
-[![Licence](https://img.shields.io/github/license/MFueg/vscode-base-extension.svg)](https://github.com/MFueg/vscode-base-extension)
-[![Issues](https://img.shields.io/github/issues/MFueg/vscode-base-extension.svg)](https://github.com/MFueg/vscode-base-extension/issues)
-[![VS Code Marketplace](https://vsmarketplacebadge.apphb.com/version-short/mfueg.vscode-base-extension.svg)
-![Rating](https://vsmarketplacebadge.apphb.com/rating-short/mfueg.vscode-base-extension.svg)
-![Downloads](https://vsmarketplacebadge.apphb.com/downloads-short/mfueg.vscode-base-extension.svg)
-![Installs](https://vsmarketplacebadge.apphb.com/installs-short/mfueg.vscode-base-extension.svg)](https://marketplace.visualstudio.com/items?itemName=mfueg.vscode-base-extension)
+[![Licence](https://img.shields.io/github/license/mfueg/vscode-crucible-codereview.svg)](https://github.com/mfueg/vscode-crucible-codereview)
+[![Issues](https://img.shields.io/github/issues/mfueg/vscode-crucible-codereview.svg)](https://github.com/mfueg/vscode-crucible-codereview/issues)
+[![VS Code Marketplace](https://vsmarketplacebadge.apphb.com/version-short/mfueg.vscode-crucible-codereview.svg)
+![Rating](https://vsmarketplacebadge.apphb.com/rating-short/mfueg.vscode-crucible-codereview.svg)
+![Downloads](https://vsmarketplacebadge.apphb.com/downloads-short/mfueg.vscode-crucible-codereview.svg)
+![Installs](https://vsmarketplacebadge.apphb.com/installs-short/mfueg.vscode-crucible-codereview.svg)](https://marketplace.visualstudio.com/items?itemName=mfueg.vscode-crucible-codereview)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
-
-An example extension. 
-
-Examples see [Microsoft](https://github.com/microsoft/vscode-extension-samples).
-
-Documentation for publishing see [Microsoft](https://code.visualstudio.com/api/working-with-extensions/publishing-extension).
+An integration of [Atlassian's Crucible](https://www.atlassian.com/de/software/crucible) for Visual Studio Code.
 
 ## Features
 
@@ -70,14 +65,14 @@ Labore consequat do cillum occaecat ad est elit. Laboris qui reprehenderit ipsum
 
 ## Acknowledgements
 
-Culpa sint veniam laborum culpa voluptate cupidatat Lorem magna voluptate dolor Lorem laboris.
+Tempor aute non nulla do ea cupidatat aliqua.
 
 ## Contributors
 
-[Matthias Füg](https://github.com/MFueg)
+[Matthias Füg](https://github.com/mfueg)
 
 Feel free to contribute...
 
 ## License
 
-[MIT](https://github.com/MFueg/vscode-base-extension/blob/master/LICENSE)
+[MIT](https://github.com/mfueg/vscode-crucible-codereview/blob/master/LICENSE)

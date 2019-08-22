@@ -1,4 +1,4 @@
-# My Extension for Visual Studio Code - Change Log
+# Crucible Code Review for Visual Studio Code - Change Log
 
 ## Version 0.0.0: April 12, 2019
 
