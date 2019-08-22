@@ -1,0 +1,79 @@
+{
+	"name": "my-extension",
+	"displayName": "My Extension",
+	"description": "Dolore sint occaecat occaecat sunt veniam.",
+	"icon": "img/logo.png",
+	"author": "Matthias Füg <matthias.fueg@dampsoft.de>",
+	"publisher": "publisher-name",
+	"version": "0.0.0",
+	"license": "MIT",
+	"homepage": "https://github.com/publisher-name/my-extension",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/publisher-name/my-extension.git"
+	},
+	"bugs": {
+		"url": "https://github.com/publisher-name/my-extension/issues",
+		"email": "matthias.fueg@dampsoft.de"
+	},
+	"categories": [ "Other" ],
+	"keywords": [],
+	"main": "./dist/main.js",
+	"engines": {
+		"node": ">=10.15",
+		"vscode": "^1.23.0"
+	},
+	"extensionDependencies": [],
+	"activationEvents": [ "*" ],
+	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "My Extension configuration",
+			"properties": {}
+		},
+		"commands": [],
+		"jsonValidation": []
+	},
+	"scripts": {
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"reinstall": "gulp uninstall && npm install",
+		"clean": "gulp clean",
+		"check-packages": "npm-upgrade check",
+		"build": "webpack --mode production",
+		"build-dev": "webpack --mode development",
+		"watch": "webpack --watch --mode development",
+		"package": "vsce package",
+		"publish": "vsce publish",
+		"vscode:prepublish": "npm run build"
+	},
+	"dependencies": {
+		"tslib": "^1.10.0",
+		"vscode-nls": "^4.1.1"
+	},
+	"devDependencies": {
+		"@types/mocha": "^5.2.7",
+		"@types/node": "^12.7.2",
+		"del": "^5.0.0",
+		"event-stream": "4.0.1",
+		"gulp": "^4.0.2",
+		"gulp-cli": "^2.2.0",
+		"gulp-filter": "^6.0.0",
+		"gulp-sourcemaps": "^2.6.5",
+		"gulp-typescript": "5.0.1",
+		"mocha": "^6.2.0",
+		"npm-upgrade": ">=2.0.0",
+		"npm-audit-resolver": "^1.5.0",
+		"ts-loader": "^6.0.4",
+		"tslint": "^5.19.0",
+		"typescript": "^3.5.3",
+		"vsce": ">=1.66.0",
+		"vscode": "^1.1.36",
+		"vscode-nls-dev": "^3.3.1",
+		"webpack": "^4.39.2",
+		"webpack-cli": "^3.3.7",
+		"@babel/core": "^7.5.5",
+		"@babel/preset-env": "^7.5.5",
+		"babel-loader": "^8.0.6",
+		"webpack-dev-server": "^3.8.0"
+	}
+}
