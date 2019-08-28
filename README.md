@@ -20,28 +20,25 @@ An integration of [Atlassian's Crucible](https://www.atlassian.com/de/software/c
 
 Sunt nulla deserunt incididunt et est excepteur ullamco. Dolor incididunt do reprehenderit velit id ad id qui esse id consequat. Lorem reprehenderit laborum nulla laborum enim labore ut pariatur in magna laborum amet ad reprehenderit.
 
-
 ## Configuration
 
 Dolor id mollit proident nisi dolore occaecat adipisicing nostrud. Reprehenderit eu officia minim Lorem id labore duis commodo incididunt. Velit amet laboris esse elit magna enim. Sit tempor ea sit duis dolore velit proident ea minim ad eiusmod.
 
 | Property          | Description                                                           |
-|-------------------|-----------------------------------------------------------------------|
+| ----------------- | --------------------------------------------------------------------- |
 | `myExtension.foo` | Id velit cillum mollit sit duis tempor duis consectetur dolore et ea. |
 
 All configuration elements can be modified with configuration symbols:
 
 | Symbol               | Description                                                | Example                                    |
-|----------------------|------------------------------------------------------------|--------------------------------------------|
+| -------------------- | ---------------------------------------------------------- | ------------------------------------------ |
 | `${workspaceFolder}` | The current working directory                              | `"cwd": "\${workspaceFolder}"`             |
 | `${env:NAME}`        | Uses an environment variable present to visual studio code | `"env": { "PATH": "${env:PATH}:My/Path" }` |
 
 ### Example configuration
 
 ```json
-{
-
-}
+{}
 ```
 
 ## Commands
@@ -49,13 +46,12 @@ All configuration elements can be modified with configuration symbols:
 The following commands are available in VS Code's command palette, use the ID to add them to your keyboard shortcuts:
 
 | ID                | Command                                                                               |
-|-------------------|---------------------------------------------------------------------------------------|
+| ----------------- | ------------------------------------------------------------------------------------- |
 | `myExtension.bar` | Enim non irure excepteur aliquip laborum dolore occaecat dolor est id labore officia. |
 
 ## Known issues
 
 Labore consequat do cillum occaecat ad est elit. Laboris qui reprehenderit ipsum esse magna Lorem pariatur exercitation ex. Laborum quis adipisicing est elit consequat anim sint ea ullamco quis. Aute minim aliqua do occaecat est amet deserunt enim. Esse eiusmod fugiat officia sit culpa duis officia.
-
 
 ## What's next?
 

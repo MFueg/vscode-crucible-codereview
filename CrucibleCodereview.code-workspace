@@ -1,21 +1,22 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"workbench.colorCustomizations": {
-			"titleBar.activeBackground": "#7a1e74",
-			"titleBar.inactiveBackground": "#7a1e7499",
-			"titleBar.activeForeground": "#e7e7e7",
-			"titleBar.inactiveForeground": "#e7e7e799"
-		},
-		"peacock.color": "#7a1e74",
-		"files.exclude": {
-			"dist/**": true,
-			"out/**": true,
-			"node_modules/**": true
-		}
-	}
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "window.title": "${dirty}${activeEditorShort}${separator}${rootName}",
+    "workbench.colorCustomizations": {
+      "titleBar.activeBackground": "#33a7c2",
+      "titleBar.inactiveBackground": "#33a7c299",
+      "titleBar.activeForeground": "#15202b",
+      "titleBar.inactiveForeground": "#15202b99"
+    },
+    "peacock.color": "#33a7c2",
+    "files.exclude": {
+      "dist/**": true,
+      "out/**": true,
+      "node_modules/**": true
+    }
+  }
 }
