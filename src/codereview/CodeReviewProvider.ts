@@ -1,6 +1,5 @@
-import { Review } from '../interfaces/Review';
-
+import { Review } from '../crucible/interfaces/Review';
 
 export interface ReviewProviderI {
-  getReviews(): Promise<Review[]>;
+	getReviews(): Promise<Review[]>;
 }
