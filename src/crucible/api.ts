@@ -9,15 +9,24 @@
 import { BasicCredentialHandler } from 'typed-rest-client/Handlers';
 import { RestUri, IRequestOptions, Response } from '../util/restUri';
 import { User, UserProfile } from './interfaces/User';
-import { Review, Reviews, CreateReview, ReviewItem, ReviewFilter, ReviewState } from './interfaces/Review';
+import {
+  Review,
+  Reviews,
+  CreateReview,
+  ReviewItem,
+  ReviewFilter,
+  ReviewState,
+  ReviewTransition,
+  CloseReviewSummary
+} from './interfaces/Review';
 import { HttpCodes } from 'typed-rest-client/HttpClient';
 import { IRequestHandler } from 'typed-rest-client/Interfaces';
-import { Error } from './interfaces/Error';
+import { Error, ReviewError } from './interfaces/Error';
 import { Change, Listing } from './interfaces/ChangeSet';
 import { VersionedEntity } from './interfaces/Version';
 import { Repository } from './interfaces/Repository';
 import { ReviewMetrics } from './interfaces/ReviewMetric';
-import { Comment, NewComment, Comments } from './interfaces/Comment';
+import { Comment, GeneralComment, Comments } from './interfaces/Comment';
 import { VersionInfo } from './interfaces/Common';
 import { History } from './interfaces/History';
 
@@ -651,13 +660,13 @@ export class CrucibleApi {
    * @param reviewId the review perma id
    * @param commentId the comment perma id
    */
-  public updateReviewComment(reviewId: string, commentId: string, comment: NewComment): Promise<void> {
+  public updateReviewComment(reviewId: string, commentId: string, comment: GeneralComment): Promise<void> {
     return new Promise((resolve, reject) => {
       this.uriReviews
         .addPart(reviewId)
         .addPart('comments')
         .addPart(commentId)
-        .update<NewComment, void | Error>(
+        .update<GeneralComment, void | Error>(
           'update-review-comment',
           comment,
           this.host,
@@ -1012,7 +1021,7 @@ export class CrucibleApi {
    * @param commentId the comment to reply to
    * @param render true if the comments should also be rendered into html, into the element <messageAsHtml>
    */
-  public getCommentReplies(reviewId: string, commentId: string, render: boolean = false): Promise<Comments> {
+  public getReviewCommentReplies(reviewId: string, commentId: string, render: boolean = false): Promise<Comments> {
     return new Promise((resolve, reject) => {
       this.uriReviews
         .addPart(reviewId)
@@ -1045,14 +1054,20 @@ export class CrucibleApi {
    * @param commentId the comment to reply to
    * @param reply new comment
    */
-  public addCommentReply(reviewId: string, commentId: string, reply: NewComment): Promise<Comment> {
+  public addReviewCommentReply(reviewId: string, commentId: string, reply: GeneralComment): Promise<Comment> {
     return new Promise((resolve, reject) => {
       this.uriReviews
         .addPart(reviewId)
         .addPart('comments')
         .addPart(commentId)
         .addPart('replies')
-        .create<NewComment, Comment | Error>('add-comment-reply', reply, this.host, this.authHandler, this.queryOptions)
+        .create<GeneralComment, Comment | Error>(
+          'add-comment-reply',
+          reply,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
         .then((r) => {
           let content = r.get<Comment>(HttpCodes.OK);
           if (content) {
@@ -1127,6 +1142,367 @@ export class CrucibleApi {
           let content = r.get<Comment>(HttpCodes.OK);
           if (content) {
             resolve(content);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Marks the comment as leave unread to the current user - it will not automatically be marked as read by crucible.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:comments:cId:markAsLeaveUnread
+   *
+   * @param reviewId the review perma-id (e.g. "CR-45").
+   * @param commentId the comment perma id.
+   */
+  public markReviewCommentAsLeaveUnread(reviewId: string, commentId: string): Promise<Comment> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('comments')
+        .addPart(commentId)
+        .addPart('markAsLeaveUnread')
+        .create<void, Comment | Error>(
+          'mark-review-comment-as-leave-unread',
+          undefined,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          let content = r.get<Comment>(HttpCodes.OK);
+          if (content) {
+            resolve(content);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Updates a reply with the given newComment.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:comments:cId:markAsLeaveUnread
+   *
+   * @param reviewId the review perma-id (e.g. "CR-45").
+   * @param commentId the comment perma id.
+   * @param replyId the perma id of the reply to update.
+   * @param reply the new reply content.
+   */
+  public updateReviewCommentReply(
+    reviewId: string,
+    commentId: string,
+    replyId: string,
+    reply: GeneralComment
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('comments')
+        .addPart(commentId)
+        .addPart('replies')
+        .addPart(replyId)
+        .create<GeneralComment, void | Error>(
+          'update-review-comment-reply',
+          reply,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Deletes a reply.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:comments:cId:markAsLeaveUnread
+   *
+   * @param reviewId the review perma-id (e.g. "CR-45").
+   * @param commentId the comment perma id.
+   * @param replyId the perma id of the reply to delete.
+   */
+  public deleteReviewCommentReply(reviewId: string, commentId: string, replyId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('comments')
+        .addPart(commentId)
+        .addPart('replies')
+        .addPart(replyId)
+        .del<void | Error>('delete-review-comment-reply', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Publishes all the draft comments of the current user.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:publish
+   *
+   * @param reviewId the review perma id to look for draft comments
+   */
+  public publishAllDraftReviewComments(reviewId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('publish')
+        .create<void, void | Error>(
+          'publish-draft-review-comments',
+          undefined,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * publishes the given draft comment.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:publish:cId
+   *
+   * @param reviewId the review perma id
+   * @param commentId the comment perma id
+   */
+  public publishDraftReviewComment(reviewId: string, commentId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('publish')
+        .addPart(commentId)
+        .create<void, void | Error>(
+          'publish-draft-review-comment',
+          undefined,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Completes the review for the current user
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:complete
+   *
+   * @param reviewId the review perma id
+   * @param ignoreWarnings if true then condition failure warnings will be ignored
+   */
+  public completeReview(reviewId: string, ignoreWarnings: boolean): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('complete')
+        .setArg('ignoreWarnings', ignoreWarnings)
+        .create<void, void | ReviewError | Error>(
+          'complete-review',
+          undefined,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            let reviewError = r.get<ReviewError>(HttpCodes.Conflict);
+            if (reviewError) {
+              reject(reviewError);
+            } else {
+              reject(this.getError(r));
+            }
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Uncompletes the review for the current user
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:uncomplete
+   *
+   * @param reviewId the review perma id
+   * @param ignoreWarnings if true then condition failure warnings will be ignored
+   */
+  public uncompleteReview(reviewId: string, ignoreWarnings: boolean): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('uncomplete')
+        .setArg('ignoreWarnings', ignoreWarnings)
+        .create<void, void | ReviewError | Error>(
+          'complete-review',
+          undefined,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            let reviewError = r.get<ReviewError>(HttpCodes.Conflict);
+            if (reviewError) {
+              reject(reviewError);
+            } else {
+              reject(this.getError(r));
+            }
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Change the state of a review by performing an action on it.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:transition
+   *
+   * @param reviewId the review perma-id (e.g. "CR-45").
+   * @param transition the action to perform
+   * @param ignoreWarnings if true then condition failure warnings will be ignored
+   */
+  public changeReviewState(reviewId: string, transition: ReviewTransition, ignoreWarnings: boolean): Promise<Review> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('transition')
+        .setArg('action', transition)
+        .setArg('ignoreWarnings', ignoreWarnings)
+        .create<void, void | ReviewError | Error>(
+          'change-review-state',
+          undefined,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          let result = r.get<Review>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            let reviewError = r.get<ReviewError>(HttpCodes.Conflict);
+            if (reviewError) {
+              reject(reviewError);
+            } else {
+              reject(this.getError(r));
+            }
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Closes the given review with the summary given.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:close
+   *
+   * @param reviewId the review perma id to close. it should be in the open state
+   * @param summary the summary to close the review
+   */
+  public closeReview(reviewId: string, summary: CloseReviewSummary): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('close')
+        .create<CloseReviewSummary, void | Error>(
+          'close-review',
+          summary,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Immediately send a reminder to incomplete reviewers about the given review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:remind
+   *
+   * @param reviewId the review perma id to remind about. it should be in the open state.
+   */
+  public remindIncompleteReviewers(reviewId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('remind')
+        .create<void, void | Error>(
+          'remind-incomplete-reviewers',
+          undefined,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
           } else {
             reject(this.getError(r));
           }
