@@ -1,11 +1,28 @@
 import { RestClient } from 'typed-rest-client';
-import { BasicCredentialHandler } from 'typed-rest-client/Handlers';
-import { IRequestOptions } from 'typed-rest-client/Interfaces';
-import { HttpCodes } from 'typed-rest-client/HttpClient';
+import * as trc from 'typed-rest-client/Interfaces';
+import { HttpCodes, HttpClient } from 'typed-rest-client/HttpClient';
+import * as fs from 'fs';
+const tempfile = require('tempfile');
+
+export interface IRequestOptions extends trc.IRequestOptions {}
+
+export class Response<T> {
+	public constructor(public readonly statusCode: number, public readonly result: T | null) {}
+
+	public get<U = T>(code?: HttpCodes): U | undefined {
+		if (!code || code != this.statusCode) {
+			return undefined;
+		}
+		if (this.result == null) {
+			return undefined;
+		}
+		return (this.result as unknown) as U;
+	}
+}
 
 export class RestUri {
-	public parts = new Array<string>();
-	public args = new Map<string, any>();
+	public readonly parts = new Array<string>();
+	public readonly args = new Map<string, any>();
 
 	public constructor(private base: string, ...parts: string[]) {
 		for (var i = 0; i < parts.length; i++) {
@@ -13,11 +30,13 @@ export class RestUri {
 		}
 	}
 
-	public setArg(key: string, value: any | any[]) {
-		if (Array.isArray(value)) {
-			value.forEach((v) => this.args.set(key, v));
-		} else {
-			this.args.set(key, value);
+	public setArg(key: string, value: any | any[] | undefined) {
+		if (value != undefined) {
+			if (Array.isArray(value)) {
+				value.forEach((v) => this.args.set(key, v));
+			} else {
+				this.args.set(key, value);
+			}
 		}
 		return this;
 	}
@@ -41,25 +60,121 @@ export class RestUri {
 		return url;
 	}
 
-	public get<T>(
+	public get<Result>(
 		id: string,
 		host: string,
-		authHandlers: BasicCredentialHandler[],
-		queryOptions: IRequestOptions
-	): Promise<T> {
-		let client = new RestClient(id, host, authHandlers, queryOptions);
+		authHandlers: trc.IRequestHandler[],
+		requestOptions: IRequestOptions
+	): Promise<Response<Result>> {
+		let client = new RestClient(id, host, authHandlers, requestOptions);
 		return new Promise((resolve, reject) => {
 			client
-				.get<T>(this.str())
+				.get<Result>(this.str())
 				.then((response) => {
-					if (response.statusCode == HttpCodes.OK && response.result) {
-						resolve(response.result);
-					}
-					reject();
+					resolve(new Response(response.statusCode, response.result));
 				})
 				.catch((e) => {
 					reject();
 				});
+		});
+	}
+
+	public create<Resource, Result>(
+		id: string,
+		content: Resource,
+		host: string,
+		authHandlers: trc.IRequestHandler[],
+		requestOptions: IRequestOptions
+	): Promise<Response<Result>> {
+		let client = new RestClient(id, host, authHandlers, requestOptions);
+		return new Promise((resolve, reject) => {
+			client
+				.create<Result>(this.str(), content)
+				.then((response) => {
+					resolve(new Response(response.statusCode, response.result));
+				})
+				.catch((e) => {
+					reject();
+				});
+		});
+	}
+
+	public update<Resource, Result>(
+		id: string,
+		content: Resource,
+		host: string,
+		authHandlers: trc.IRequestHandler[],
+		requestOptions: IRequestOptions
+	): Promise<Response<Result>> {
+		let client = new RestClient(id, host, authHandlers, requestOptions);
+		return new Promise((resolve, reject) => {
+			client
+				.update<Result>(this.str(), content)
+				.then((response) => {
+					resolve(new Response(response.statusCode, response.result));
+				})
+				.catch((e) => {
+					reject();
+				});
+		});
+	}
+
+	public del<Result>(
+		id: string,
+		host: string,
+		authHandlers: trc.IRequestHandler[],
+		requestOptions: IRequestOptions
+	): Promise<Response<Result>> {
+		let client = new RestClient(id, host, authHandlers, requestOptions);
+		return new Promise((resolve, reject) => {
+			client
+				.del<Result>(this.str())
+				.then((response) => {
+					resolve(new Response(response.statusCode, response.result));
+				})
+				.catch((e) => {
+					reject();
+				});
+		});
+	}
+
+	public uploadFile<Result>(
+		id: string,
+		host: string,
+		stream: NodeJS.ReadableStream,
+		authHandlers: trc.IRequestHandler[],
+		requestOptions: IRequestOptions
+	): Promise<Response<Result>> {
+		let client = new RestClient(id, host, authHandlers, requestOptions);
+		return new Promise((resolve, reject) => {
+			client
+				.uploadStream<Result>('verb', this.str(), stream)
+				.then((response) => {
+					resolve(new Response(response.statusCode, response.result));
+				})
+				.catch((e) => {
+					reject();
+				});
+		});
+	}
+
+	public loadFile<Result>(
+		id: string,
+		host: string,
+		authHandlers: trc.IRequestHandler[],
+		requestOptions: IRequestOptions
+	): Promise<Response<Result>> {
+		return new Promise<Response<Result>>((resolve, reject) => {
+			let tempFilePath = tempfile();
+			let file: NodeJS.WritableStream = fs.createWriteStream(tempFilePath);
+			let client = new HttpClient(id, authHandlers, requestOptions);
+			client.get(host + '/' + this.str()).then((r) => {
+				r.message.pipe(file).on('close', () => {
+					let body: string = fs.readFileSync(tempFilePath).toString();
+					let result: Result = JSON.parse(body);
+					resolve(new Response(HttpCodes.OK, result));
+				});
+			});
 		});
 	}
 }

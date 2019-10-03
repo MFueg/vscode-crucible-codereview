@@ -1,16 +1,16 @@
-export interface ReviewMetricQuery {
-  metricsData: Metrics[];
+export interface ReviewMetrics {
+	metricsData: ReviewMetric[];
 }
 
-export interface Metrics {
-  type: string;
-  configVersion: number;
-  label: string;
-  defaultValue: Value;
-  values: Value[];
+export interface ReviewMetric {
+	type: string;
+	configVersion: number;
+	label: string;
+	defaultValue: Value;
+	values: Value[];
 }
 
 export interface Value {
-  name: string;
-  value: number;
+	name: string;
+	value: number;
 }

@@ -6,3 +6,8 @@ export interface TimeZone {
 	name: string;
 	rawOffset: number;
 }
+
+export interface VersionInfo {
+	releaseNumber: string;
+	buildDate: string;
+}

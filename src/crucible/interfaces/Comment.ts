@@ -1,6 +1,6 @@
 import { User } from './User';
 import { PermaID } from './Common';
-import { Metrics } from './ReviewMetric';
+import { ReviewMetric } from './ReviewMetric';
 
 export interface Comments {
 	comments: Comment[];
@@ -22,14 +22,14 @@ export interface Comment {
 	defectApproved: boolean;
 	defectRaised: boolean;
 	deleted: boolean;
-	draft: boolean;
+	draft?: boolean;
 	fromLineRange: string;
 	message: string;
 	messageAsHtml: string;
-	metrics?: Metrics;
-	parentCommentId: Metrics;
-	permaId: PermaID;
-	permId: PermaID;
+	metrics?: ReviewMetric;
+	parentCommentId?: ReviewMetric;
+	permaId?: PermaID;
+	permId?: PermaID;
 	readStatus: string;
 	replies?: any[];
 	reviewItemId: PermaID;

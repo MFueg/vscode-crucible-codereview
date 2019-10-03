@@ -1,5 +1,12 @@
+export type ErrorCode =
+	| 'IllegalArgument'
+	| 'IllegalState'
+	| 'NotFound'
+	| 'NotPermitted'
+	| 'PermaIdFormat'
+	| 'ReviewContentTooLarge';
 
 export interface Error {
-  code: string;
-  message: string;
+	code: ErrorCode;
+	message: string;
 }
