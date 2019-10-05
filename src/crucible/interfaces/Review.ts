@@ -17,16 +17,16 @@ export type ReviewFilter =
   | 'closed' //Closed reviews created by the current user.
   | 'trash'; //Abandoned reviews created by the current user.
 
-export type ReviewTransition =
-  | 'abandonReview' // abandon (i.e. cancel) a review
-  | 'deleteReview' // permanently delete a review
-  | 'submitReview' // submit a review to the moderator for approval
-  | 'approveReview' // approve a review (i.e. issue it to the reviewers)
-  | 'rejectReview' // reject a review submitted for approval
-  | 'summarizeReview' // summarize a review
-  | 'closeReview' // close a review once it has been summarized
-  | 'reopenReview' // re-open a closed review
-  | 'recoverReview'; // recover an abandoned review
+export type ReviewTransitionName =
+  | 'action:abandonReview' // abandon (i.e. cancel) a review
+  | 'action:deleteReview' // permanently delete a review
+  | 'action:submitReview' // submit a review to the moderator for approval
+  | 'action:approveReview' // approve a review (i.e. issue it to the reviewers)
+  | 'action:rejectReview' // reject a review submitted for approval
+  | 'action:summarizeReview' // summarize a review
+  | 'action:closeReview' // close a review once it has been summarized
+  | 'action:reopenReview' // re-open a closed review
+  | 'action:recoverReview'; // recover an abandoned review
 
 export type ReviewState = 'Draft' | 'Approval' | 'Review' | 'Summarize' | 'Closed' | 'Dead' | 'Rejected' | 'Unknown';
 
@@ -126,4 +126,13 @@ export interface Transition {
 
 export interface CloseReviewSummary {
   summary: string;
+}
+
+export interface ReviewTransitions {
+  transitionData: ReviewTransition[];
+}
+
+export interface ReviewTransition {
+  name: ReviewTransitionName;
+  displayName: string;
 }

@@ -2,6 +2,9 @@
  * CRUCIBLE REST API Documentation
  * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html
  *
+ * FISHEYE CRUCIBLE REST API Documentation
+ * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/fecru.html
+ *
  * TS REST CLIENT Documentation
  * https://github.com/Microsoft/typed-rest-client/tree/db388ca114dffc1e241ae81e6f3b9cd022c5b281/samples
  */
@@ -16,19 +19,24 @@ import {
   ReviewItem,
   ReviewFilter,
   ReviewState,
-  ReviewTransition,
-  CloseReviewSummary
+  ReviewTransitionName,
+  CloseReviewSummary,
+  ReviewTransitions,
+  ReviewItems
 } from './interfaces/Review';
 import { HttpCodes } from 'typed-rest-client/HttpClient';
 import { IRequestHandler } from 'typed-rest-client/Interfaces';
 import { Error, ReviewError } from './interfaces/Error';
-import { Change, Listing } from './interfaces/ChangeSet';
+import { Change, Listing, AddChangeSet, Revision } from './interfaces/ChangeSet';
 import { VersionedEntity } from './interfaces/Version';
 import { Repository } from './interfaces/Repository';
 import { ReviewMetrics } from './interfaces/ReviewMetric';
 import { Comment, GeneralComment, Comments } from './interfaces/Comment';
 import { VersionInfo } from './interfaces/Common';
 import { History } from './interfaces/History';
+import { Patch, PatchGroups } from './interfaces/Patch';
+import { Reviewers } from './interfaces/Reviewer';
+import { ReviewRevisions } from './interfaces/ReviewRevision';
 
 export class CrucibleApi {
   public constructor(
@@ -167,14 +175,14 @@ export class CrucibleApi {
    * @param term search term
    * @param maxReturn the maximum number of reviews to return.
    */
-  public searchReview(term: string, maxReturn: number): Promise<Review[]> {
+  public searchReview(term: string, maxReturn: number): Promise<Reviews> {
     return new Promise((resolve, reject) => {
       this.uriSearch
         .setArg('term', term)
         .setArg('maxReturn', maxReturn)
-        .get<Review[] | Error>('search-review', this.host, this.authHandler, this.queryOptions)
+        .get<Reviews | Error>('search-review', this.host, this.authHandler, this.queryOptions)
         .then((r) => {
-          let reviews = r.get<Review[]>(HttpCodes.OK);
+          let reviews = r.get<Reviews>(HttpCodes.OK);
           if (reviews) {
             resolve(reviews);
           } else {
@@ -195,14 +203,14 @@ export class CrucibleApi {
    * @param jiraKey a Jira issue key (e.g. "FOO-3453")
    * @param maxReturn the maximum number of reviews to return.
    */
-  public getReviewsForIssue(jiraKey: string, maxReturn: number): Promise<Review[]> {
+  public getReviewsForIssue(jiraKey: string, maxReturn: number): Promise<Reviews> {
     return new Promise((resolve, reject) => {
       this.uriSearch
         .setArg('jiraKey', jiraKey)
         .setArg('maxReturn', maxReturn)
-        .get<Review[] | Error>('get-review-for-issue', this.host, this.authHandler, this.queryOptions)
+        .get<Reviews | Error>('get-review-for-issue', this.host, this.authHandler, this.queryOptions)
         .then((r) => {
-          let reviews = r.get<Review[]>(HttpCodes.OK);
+          let reviews = r.get<Reviews>(HttpCodes.OK);
           if (reviews) {
             resolve(reviews);
           } else {
@@ -609,6 +617,7 @@ export class CrucibleApi {
         .addPart(reviewId)
         .addPart('comments')
         .addPart(commentId)
+        .setArg('render', render)
         .get<Comment | Error>('get-review-comment', this.host, this.authHandler, this.queryOptions)
         .then((r) => {
           let content = r.get<Comment>(HttpCodes.OK);
@@ -785,8 +794,6 @@ export class CrucibleApi {
    *
    * Get all the reviews which match the given filter, for the current user.
    *
-   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:filter:filter
-   *
    * @param detailed set to true if the detailed api should be used.
    * @param filter A predefined filter type.
    */
@@ -843,8 +850,6 @@ export class CrucibleApi {
    * accessible under the provided credentials.
    *
    * To ignore a property, omit it from the query string.
-   *
-   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:filter:details
    *
    * @param detailed set to true if the detailed api should be used.
    * @param title a string that will be searched for in review titles.
@@ -1415,7 +1420,11 @@ export class CrucibleApi {
    * @param transition the action to perform
    * @param ignoreWarnings if true then condition failure warnings will be ignored
    */
-  public changeReviewState(reviewId: string, transition: ReviewTransition, ignoreWarnings: boolean): Promise<Review> {
+  public changeReviewState(
+    reviewId: string,
+    transition: ReviewTransitionName,
+    ignoreWarnings: boolean
+  ): Promise<Review> {
     return new Promise((resolve, reject) => {
       this.uriReviews
         .addPart(reviewId)
@@ -1512,4 +1521,934 @@ export class CrucibleApi {
         });
     });
   }
+
+  /**
+   * Return a list of Reviews which include a particular file.
+   * The path parameter must be the full path name of a file in repository, with no leading slash.
+   *
+   * @param repositoryId the key of the repository to search for file
+   * @param path path to find in reviews
+   */
+  private searchReviewForFileInternal(detailed: boolean, repositoryId: string, path: string): Promise<Reviews> {
+    return new Promise((resolve, reject) => {
+      let id = detailed ? 'search-for-file-detailed' : 'search-for-file';
+      let uri = this.uriReviews.addPart('search').addPart(repositoryId);
+      if (detailed) {
+        uri.addPart('details');
+      }
+      uri
+        .setArg('path', path)
+        .get<Reviews | Error>(id, this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<Reviews>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Return a list of Reviews which include a particular file.
+   * The path parameter must be the full path name of a file in repository, with no leading slash.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:search:repository
+   *
+   * @param repositoryId the key of the repository to search for file
+   * @param path path to find in reviews
+   */
+  public searchReviewForFile(repositoryId: string, path: string): Promise<Reviews> {
+    return this.searchReviewForFileInternal(false, repositoryId, path);
+  }
+
+  /**
+   * Return a list of Reviews which include a particular file.
+   * The path parameter must be the full path name of a file in repository, with no leading slash.
+   * For each review all details are included (review items + comments).
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:search:repository:details
+   *
+   * @param repositoryId the key of the repository to search for file
+   * @param path path to find in reviews
+   */
+  public searchReviewForFileDetailed(repositoryId: string, path: string): Promise<Reviews> {
+    return this.searchReviewForFileInternal(true, repositoryId, path);
+  }
+
+  /**
+   * Internal method to get a review.
+   *
+   * Get a single review by its permId (e.g. "CR-45"). If the review does not exist, a 404 is returned.
+   * The moderator element may not exist if the review does not have a Moderator.
+   *
+   * @param detailed set to true if the detailed api should be used.
+   * @param reviewId the permId of the review to delete (e.g. "CR-45").
+   */
+  private getReviewInternal(detailed: boolean, reviewId: string): Promise<Review> {
+    return new Promise((resolve, reject) => {
+      let id = detailed ? 'get-review-detailed' : 'get-review';
+      let uri = this.uriReviews.addPart(reviewId);
+      if (detailed) {
+        uri.addPart('details');
+      }
+      uri
+        .get<Review | Error>(id, this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<Review>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Get a single review by its permId (e.g. "CR-45"). If the review does not exist, a 404 is returned.
+   * The moderator element may not exist if the review does not have a Moderator.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id
+   *
+   * @param reviewId the permId of the review to delete (e.g. "CR-45").
+   */
+  public getReview(reviewId: string): Promise<Review> {
+    return this.getReviewInternal(false, reviewId);
+  }
+
+  /**
+   * Permanently deletes the specified review. The review must have been abandoned.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id
+   *
+   * @param reviewId the permId of the review to delete (e.g. "CR-45").
+   */
+  public deleteReview(reviewId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .del<void | Error>('delete-review', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Get a single review by its permId (e.g. "CR-45"). If the review does not exist, a 404 is returned.
+   * The moderator element may not exist if the review does not have a Moderator.
+   * All details are included (review items + comments).
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:details
+   *
+   * @param reviewId the permId of the review to delete (e.g. "CR-45").
+   */
+  public getReviewDetailed(reviewId: string): Promise<Review> {
+    return this.getReviewInternal(true, reviewId);
+  }
+
+  /**
+   * Get a list of the actions which the current user is allowed to perform on the review.
+   * This shows actions the user has permission to perform - the review may not be in a suitable state for all
+   * these actions to be performed.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:actions
+   *
+   * @param reviewId the permId of the a review (e.g. "CR-45").
+   */
+  public getReviewActions(reviewId: string): Promise<ReviewTransitions> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('actions')
+        .get<ReviewTransitions | Error>('get-review-actions', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<ReviewTransitions>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Get a list of the actions which the current user can perform on this review, given its current state
+   * and the user's permissions.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:transitions
+   *
+   * @param reviewId the permId of the a review (e.g. "CR-45").
+   */
+  public getReviewTransitions(reviewId: string): Promise<ReviewTransitions> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('actions')
+        .get<ReviewTransitions | Error>('get-review-transitions', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<ReviewTransitions>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Adds a new change set to the review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:addChangeset
+   *
+   * @param reviewId the perm id of the review to add the changeset to
+   * @param changeSet the new change set
+   */
+  public addReviewChangeSet(reviewId: string, changeSet: AddChangeSet): Promise<Review> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('addChangeset')
+        .create<AddChangeSet, Review | Error>(
+          'add-review-change-set',
+          changeSet,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          let result = r.get<Review>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Add the revisions in a patch to an existing review.
+   *
+   * If the anchor field is filled Crucible will attempt to anchor the patch to the specified repository/path
+   *
+   * If the source field is filled Crucible will attempt to add the patch to the existing patch with the given source name.
+   * Both patches need to be anchored to the same repository. Use GET reviews-v1/{id}/patch to get a list of valid sources.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:patch
+   *
+   * @param reviewId the review id add the patch to
+   * @param patch the patch to add
+   */
+  public addReviewPatch(reviewId: string, patch: Patch): Promise<Review> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('patch')
+        .create<Patch, Review | Error>('add-review-patch', patch, this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<Review>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Get a list of patches and their details for the given review
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:patch
+   *
+   * @param reviewId the review id to get the patches for
+   */
+  public getReviewPatchGroups(reviewId: string): Promise<PatchGroups> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('patch')
+        .get<PatchGroups | Error>('get-review-patch-groups', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<PatchGroups>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Adds the given list of revisions to the supplied review item, merging if required.
+   * For example, if the review item for a.txt contains revisions 3 to 6, and if:
+   *
+   * revisions to add is 4 and 5, then a.txt will have revisions 3--4--5--6
+   * revisions to add is 2 and 7, then a.txt will have revisions 2--3--6--7
+   * revisions to add is just 2, then a.txt will have revisions 2--3--6
+   * revisions to add is just 7, then a.txt will have revisions 3--6--7
+   * revisions to add is 2 and 4, then a.txt will have revisions 2--3--4--6
+   * revisions to add is 4 and 7, then a.txt will have revisions 3--4--6--7
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewitems:riId:revisions
+   *
+   * @param reviewId the PermId of the review to add the items to (e.g. "CR-345").
+   * @param reviewItemId the id of the review item from which to add the list of revisions to (e.g. "CFR-5622").
+   * @param revisions a list of revisions to add. If the revision does not exist in the review item, it is ignored.
+   */
+  public addRevisionsToReviewItem(reviewId: string, reviewItemId: string, revisions: number[]): Promise<ReviewItem> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewitems')
+        .addPart(reviewItemId)
+        .addPart('revisions')
+        .setArg('rev', revisions)
+        .create<void, ReviewItem | Error>(
+          'add-revisions-to-review-item',
+          undefined,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          let result = r.get<ReviewItem>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Removes the revisions given from the review item in the review specified by the id.
+   *
+   * If the review item has no more revisions left, it is automatically deleted.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewitems:riId:revisions
+   *
+   * @param reviewId the PermId of the review to remove the items from (e.g. "CR-345").
+   * @param reviewItemId the id of the review item from which to remove the list of revisions (e.g. "CFR-5622").
+   * @param revisions a list of revisions to remove. If the revision does not exist in the review item, it is ignored.
+   */
+  public deleteRevisionsFromReviewItem(
+    reviewId: string,
+    reviewItemId: string,
+    revisions: number[]
+  ): Promise<ReviewItem> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewitems')
+        .addPart(reviewItemId)
+        .addPart('revisions')
+        .setArg('rev', revisions)
+        .del<ReviewItem | Error>('remove-revisions-from-review-item', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<ReviewItem>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Removes an item from a review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewitems:riId
+   *
+   * @param reviewId review id (e.g. "CR-345").
+   * @param reviewItemId review item id (e.g. "CFR-6312").
+   */
+  public removeReviewItem(reviewId: string, reviewItemId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewitems')
+        .addPart(reviewItemId)
+        .del<void | Error>('remove-review-item', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Returns detailed information for a specific review item.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewitems:riId
+   *
+   * @param reviewId review id (e.g. "CR-345").
+   * @param reviewItemId review item id (e.g. "CFR-6312").
+   */
+  public getReviewItem(reviewId: string, reviewItemId: string): Promise<ReviewItem> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewitems')
+        .addPart(reviewItemId)
+        .del<ReviewItem | Error>('get-review-item', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<ReviewItem>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Return all the comments visible to the requesting user for the review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:comments
+   *
+   * @param reviewId the review perma id
+   * @param render true if the wiki text should be rendered into html, into the field <messageAsHtml>.
+   */
+  public getReviewComments(reviewId: string, render: boolean = false): Promise<Comments> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('comments')
+        .setArg('render', render)
+        .get<Comments | Error>('get-review-comments', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let content = r.get<Comments>(HttpCodes.OK);
+          if (content) {
+            resolve(content);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Return all the comments visible to the requesting user for the review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:comments
+   *
+   * @param reviewId the review perma id
+   * @param render true if the wiki text should be rendered into html, into the field <messageAsHtml>.
+   */
+  public addReviewComment(reviewId: string, comment: GeneralComment): Promise<Comment> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('comments')
+        .create<GeneralComment, Comment | Error>(
+          'add-review-comment',
+          comment,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          let content = r.get<Comment>(HttpCodes.OK);
+          if (content) {
+            resolve(content);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Return all the comments visible to the requesting user for the review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:comments:general
+   *
+   * @param reviewId the review perma id
+   * @param render true if the wiki text should be rendered into html, into the field <messageAsHtml>.
+   */
+  public getReviewGeneralComments(reviewId: string, render: boolean = false): Promise<Comments> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('comments')
+        .addPart('general')
+        .setArg('render', render)
+        .get<Comments | Error>('get-review-general-comments', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let content = r.get<Comments>(HttpCodes.OK);
+          if (content) {
+            resolve(content);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Return all the comments visible to the requesting user for the review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:comments:versioned
+   *
+   * @param reviewId the review perma id
+   * @param render true if the wiki text should be rendered into html, into the field <messageAsHtml>.
+   */
+  public getReviewVersionedComments(reviewId: string, render: boolean = false): Promise<Comments> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('comments')
+        .addPart('versioned')
+        .setArg('render', render)
+        .get<Comments | Error>('get-review-versioned-comments', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let content = r.get<Comments>(HttpCodes.OK);
+          if (content) {
+            resolve(content);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Return all the comments visible to the requesting user for the review item.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:comments
+   *
+   * @param reviewId the review perma id
+   * @param reviewItemId review item id (e.g. "CFR-6312").
+   * @param render true if the wiki text should be rendered into html, into the field <messageAsHtml>.
+   */
+  public getReviewItemComments(reviewId: string, reviewItemId: string, render: boolean = false): Promise<Comments> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewitems')
+        .addPart(reviewItemId)
+        .addPart('comments')
+        .setArg('render', render)
+        .get<Comments | Error>('get-review-item-comments', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let content = r.get<Comments>(HttpCodes.OK);
+          if (content) {
+            resolve(content);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Return all the comments visible to the requesting user for the review item.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:comments
+   *
+   * @param reviewId the review perma id
+   * @param reviewItemId review item id (e.g. "CFR-6312").
+   */
+  public addReviewItemComments(reviewId: string, reviewItemId: string, comments: Comments): Promise<Comments> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewitems')
+        .addPart(reviewItemId)
+        .addPart('comments')
+        .create<Comments, Comments | Error>(
+          'add-review-item-comments',
+          comments,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          let content = r.get<Comments>(HttpCodes.OK);
+          if (content) {
+            resolve(content);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Removes the patch with the given id from the review. All of the revisions provided by the patch will be removed as well.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:patch:patchId
+   *
+   * @param reviewId review id (e.g. "CR-345").
+   * @param patchId the id of the patch (as returned by the '{id}/patch' resource)
+   */
+  public removeReviewPatch(reviewId: string, patchId: string): Promise<PatchGroups> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('patch')
+        .addPart(patchId)
+        .del<PatchGroups | Error>('remove-review-patch', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<PatchGroups>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Get a list of reviewers in the review given by the permaid id.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewers
+   *
+   * @param reviewId the id of the review
+   */
+  public getReviewReviewers(reviewId: string): Promise<Reviewers> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewers')
+        .del<Reviewers | Error>('get-review-reviewers', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<Reviewers>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Adds the given list of reviewers to the review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewers
+   *
+   * @param reviewId the id of the review
+   * @param reviewerIds a list of comma separated reviewers
+   */
+  public addReviewReviewers(reviewId: string, reviewerIds: string[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewers')
+        .create<string, Reviewers | Error>(
+          'add-review-reviewers',
+          reviewerIds.join(','),
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Gets a list of completed reviewers.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewers:completed
+   *
+   * @param reviewId the id of the review
+   */
+  public getReviewReviewersCompleted(reviewId: string): Promise<Reviewers> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewers')
+        .addPart('completed')
+        .get<Reviewers | Error>('get-review-reviewers-completed', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<Reviewers>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Gets a list of reviewers that have not completed the review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewers:uncompleted
+   *
+   * @param reviewId the id of the review
+   */
+  public getReviewReviewersUncompleted(reviewId: string): Promise<Reviewers> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewers')
+        .addPart('uncompleted')
+        .get<Reviewers | Error>('get-review-reviewers-uncompleted', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<Reviewers>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Removes the reviewer from the review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewers:username
+   *
+   * @param reviewId the id of the review
+   * @param reviewerName the name of the reviewer.
+   */
+  public removeReviewReviewer(reviewId: string, reviewerName: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewers')
+        .addPart(reviewerName)
+        .del<void | Error>('remove-review-reviewer', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          if (r.statusCode == HttpCodes.OK) {
+            resolve();
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Returns a list of all the items in a review.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewers:uncompleted
+   *
+   * @param reviewId the id of the review
+   */
+  public getReviewReviewItems(reviewId: string): Promise<ReviewItems> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewitems')
+        .get<ReviewItems | Error>('get-review-review-items', this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<ReviewItems>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Internal method.
+   *
+   * Add the changes between two files in a fisheye repository to the review.
+   * This call includes the Location response header that contains the URL of the newly created entity.
+   *
+   * @param detailed set to true if the detailed api should be used.
+   * @param reviewId the id of the review
+   * @param reviewItem new review item
+   */
+  private addReviewReviewItemInternal(
+    detailed: boolean,
+    reviewId: string,
+    reviewItem: ReviewItem
+  ): Promise<ReviewItem> {
+    return new Promise((resolve, reject) => {
+      let id = detailed ? 'add-reviews-review-item-detailed' : 'add-reviews-review-item-';
+      let uri = this.uriReviews.addPart(reviewId).addPart('reviewitems');
+      if (detailed) {
+        uri.addPart('details');
+      }
+      uri
+        .create<ReviewItem, ReviewItem | Error>(id, reviewItem, this.host, this.authHandler, this.queryOptions)
+        .then((r) => {
+          let result = r.get<ReviewItem>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Add the changes between two files in a fisheye repository to the review.
+   * This call includes the Location response header that contains the URL of the newly created entity.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewers:uncompleted
+   *
+   * @param reviewId the id of the review
+   * @param reviewItem new review item
+   */
+  public addReviewReviewItem(reviewId: string, reviewItem: ReviewItem): Promise<ReviewItem> {
+    return this.addReviewReviewItemInternal(false, reviewId, reviewItem);
+  }
+
+  /**
+   * Adds a review item for each of the supplied crucibleRevisionData elements.
+   *
+   * Provide a list of crucibleRevisionData elements, each one containing the desired shape of the review item.
+   * If a crucibleRevisionData element contains a path that already exists
+   * (i.e., an existing review item with the same path is in the review), then the crucibleRevisionData element
+   * given here will merge the revisions with the existing review item revisions instead of creating a new review item.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewitems:revisions
+   *
+   * @param reviewId the id of the review
+   * @param revisions new review revisions to add
+   */
+  public addReviewRevisions(reviewId: string, revisions: ReviewRevisions): Promise<Review> {
+    return new Promise((resolve, reject) => {
+      this.uriReviews
+        .addPart(reviewId)
+        .addPart('reviewitems')
+        .addPart('revisions')
+        .create<ReviewRevisions, Review | Error>(
+          'add-review-revisions',
+          revisions,
+          this.host,
+          this.authHandler,
+          this.queryOptions
+        )
+        .then((r) => {
+          let result = r.get<Review>(HttpCodes.OK);
+          if (result) {
+            resolve(result);
+          } else {
+            reject(this.getError(r));
+          }
+        })
+        .catch((e) => {
+          reject(e);
+        });
+    });
+  }
+
+  /**
+   * Adds the given review item to the review. This will always create a new review item,
+   * even if there is an existing one with the same data in the review (in which case the existing item will be replaced).
+   *
+   * The response includes the Location HTTP header.
+   *
+   * https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewitems:details
+   *
+   * @param reviewId the id of the review
+   * @param reviewItem new review item
+   */
+  public addReviewReviewItemDetailed(reviewId: string, reviewItem: ReviewItem): Promise<ReviewItem> {
+    return this.addReviewReviewItemInternal(true, reviewId, reviewItem);
+  }
+
+  // TODO: Missing method: https://docs.atlassian.com/fisheye-crucible/4.5.1/wadl/crucible.html#rest-service:reviews-v1:id:reviewitems:riId:details
 }
