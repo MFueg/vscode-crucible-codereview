@@ -38,7 +38,7 @@ import { Patch, PatchGroups } from './interfaces/Patch';
 import { Reviewers } from './interfaces/Reviewer';
 import { ReviewRevisions } from './interfaces/ReviewRevision';
 
-export class CrucibleApi {
+export class ApiCrucible {
   public constructor(
     private readonly host: string,
     private readonly username: string,
@@ -74,11 +74,6 @@ export class CrucibleApi {
     return new RestUri('/rest-service/reviews-v1');
   }
 
-  private getError(result: Response<any>) {
-    let e = result.result as Error;
-    return e ? e.message : 'unknown error';
-  }
-
   /* private get<T>(id: string, uri: RestUri): Promise<T> {
 		return uri.get<T>(id, this.host, this.authHandler, this.queryOptions);
 	} */
@@ -102,7 +97,7 @@ export class CrucibleApi {
           if (users) {
             resolve(users);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -130,7 +125,7 @@ export class CrucibleApi {
           if (user) {
             resolve(user);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -156,7 +151,7 @@ export class CrucibleApi {
           if (profile) {
             resolve(profile);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -186,7 +181,7 @@ export class CrucibleApi {
           if (reviews) {
             resolve(reviews);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -214,7 +209,7 @@ export class CrucibleApi {
           if (reviews) {
             resolve(reviews);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -222,6 +217,8 @@ export class CrucibleApi {
         });
     });
   }
+
+  /********************** REPOSITORY API **********************/
 
   /**
    * Returns a list of all repositories. This includes plugin provided repositories.
@@ -258,7 +255,7 @@ export class CrucibleApi {
           if (reviews) {
             resolve(reviews);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -290,7 +287,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -319,7 +316,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -372,7 +369,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -407,7 +404,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -437,7 +434,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -466,7 +463,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -498,7 +495,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -506,6 +503,8 @@ export class CrucibleApi {
         });
     });
   }
+
+  /********************** REVIEW API **********************/
 
   /**
    * Get all reviews as a list of ReviewData structures.
@@ -526,7 +525,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -566,7 +565,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -593,7 +592,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -624,7 +623,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -652,7 +651,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -686,7 +685,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -727,7 +726,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -751,7 +750,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -780,7 +779,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -811,7 +810,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -905,7 +904,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1040,7 +1039,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1078,7 +1077,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1112,7 +1111,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1148,7 +1147,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1184,7 +1183,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1227,7 +1226,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1258,7 +1257,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1290,7 +1289,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1324,7 +1323,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1362,7 +1361,7 @@ export class CrucibleApi {
             if (reviewError) {
               reject(reviewError);
             } else {
-              reject(this.getError(r));
+              reject(r.getError());
             }
           }
         })
@@ -1401,7 +1400,7 @@ export class CrucibleApi {
             if (reviewError) {
               reject(reviewError);
             } else {
-              reject(this.getError(r));
+              reject(r.getError());
             }
           }
         })
@@ -1447,7 +1446,7 @@ export class CrucibleApi {
             if (reviewError) {
               reject(reviewError);
             } else {
-              reject(this.getError(r));
+              reject(r.getError());
             }
           }
         })
@@ -1481,7 +1480,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1513,7 +1512,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1544,7 +1543,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1603,7 +1602,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1640,7 +1639,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1682,7 +1681,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1710,7 +1709,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1744,7 +1743,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1777,7 +1776,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1804,7 +1803,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1850,7 +1849,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1888,7 +1887,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1916,7 +1915,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1945,7 +1944,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -1974,7 +1973,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2008,7 +2007,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2038,7 +2037,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2068,7 +2067,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2100,7 +2099,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2136,7 +2135,7 @@ export class CrucibleApi {
           if (content) {
             resolve(content);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2165,7 +2164,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2192,7 +2191,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2225,7 +2224,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2253,7 +2252,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2281,7 +2280,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2309,7 +2308,7 @@ export class CrucibleApi {
           if (r.statusCode == HttpCodes.OK) {
             resolve();
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2336,7 +2335,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2373,7 +2372,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {
@@ -2426,7 +2425,7 @@ export class CrucibleApi {
           if (result) {
             resolve(result);
           } else {
-            reject(this.getError(r));
+            reject(r.getError());
           }
         })
         .catch((e) => {

@@ -1,4 +1,5 @@
 export type ErrorCode =
+  | 'Unknown'
   | 'IllegalArgument'
   | 'IllegalState'
   | 'NotFound'
