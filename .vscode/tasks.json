@@ -2,5 +2,26 @@
   // See https://go.microsoft.com/fwlink/?LinkId=733558
   // for the documentation about the tasks.json format
   "version": "2.0.0",
-  "tasks": []
+  "tasks": [
+    {
+      "label": "Get Crucible API JSON",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "tools/webscarper.js",
+        ">",
+        "crucible.json"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "type": "npm",
+      "script": "build",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
 }
