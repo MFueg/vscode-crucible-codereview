@@ -73,7 +73,7 @@
     "gulp-sourcemaps": "^2.6.5",
     "gulp-typescript": "5.0.1",
     "jsonframe-cheerio": "^3.0.1",
-    "mocha": "^6.2.2",
+    "mocha": "^10.2.0",
     "npm-audit-resolver": "^2.0.1",
     "request": "^2.88.0",
     "ts-loader": "^6.2.0",
